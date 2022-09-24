@@ -1,0 +1,951 @@
+---
+
+author: "Maaz Shaikh"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Instructions
+
+_Your goal for this final exam is to conduct the necessary analyses of vaccination rates in California school districts and then write up a technical report for a scientifically knowledgeable staff member in a California state legislator’s office. You should provide sufficient numeric and graphical detail that the staff member can create a comprehensive briefing for a legislator (see question 10 for specific points of interest). You can assume that the staff member understands the concept of statistical significance and other basic concepts like mean, standard deviation, and correlation. _ 
+
+_For this exam, the report writing is very important: Your responses will be graded on the basis of clarity; conciseness; inclusion and explanation of specific and appropriate statistical values; inclusion of both frequentist and Bayesian inferential evidence (i.e., it is not sufficient to just examine the data); explanation of any included tabular material and the appropriate use of graphical displays when/if necessary. It is also important to conduct a thorough analysis, including both data exploration and cleaning and appropriate diagnostics. Bonus points will be awarded for work that goes above expectations._
+
+_In your answer for each question, make sure you write a narrative with complete sentences that answers the substantive question. You can choose to put important statistical values into a table for readability, or you can include the statistics within your narrative. Be sure that you not only report what a test result was, but also what that result means substantively. Make sure to include enough statistical information so that another analytics professional could review your work. Your report can include graphics created by R, keeping in mind that if you do include a graphic, you will have to provide some accompanying narrative text to explain what it is doing in your report. Finally, be sure to proofread your final knitted submission to ensure that everything is included and readable._
+
+_You *may not* receive assistance, help, coaching, guidance, or support from any human except your instructor at any point during this exam. Your instructor will be available by email throughout the report writing period if you have questions, but don’t wait until the last minute!_ 
+
+## Data
+
+_You have an RData file available on Blackboard area that contains two data sets that pertain to vaccinations for the U.S. as a whole and for Californian school districts. The U.S. vaccine data is a time series and the California data is a sample of end-of-year vaccination reports from n=700 school districts. Here is a description of the datasets:_
+
+usVaccines – Time series data from the World Health Organization reporting vaccination rates in the U.S. for five common vaccines
+
+```{ eval=FALSE}
+Time-Series [1:38, 1:5] from 1980 to 2017: 
+ - attr(*, "dimnames")=List of 2
+  ..$ : NULL
+  ..$ : chr [1:5] "DTP1" "HepB_BD" "Pol3" "Hib3" “MCV1”... 
+```
+
+_(Note: DTP1 = First dose of Diphtheria/Pertussis/Tetanus vaccine (i.e., DTP); HepB_BD = Hepatitis B, Birth Dose (HepB); Pol3 = Polio third dose (Polio); Hib3 – Influenza third dose; MCV1 = Measles first dose (included in MMR))_ 
+
+districts – A sample of California public school districts from the 2017 data collection, along with specific numbers and percentages for each district: 
+
+```{ eval=FALSE}
+'data.frame':	700 obs. of  14 variables:
+ $ DistrictName    : Name of the district
+ $ WithDTP         : Percentage of students in the district with the DTP vaccine
+ $ WithPolio       : Percentage of students in the district with the Polio vaccine
+ $ WithMMR         : Percentage of students in the district with the MMR vaccine
+ $ WithHepB        : Percentage of students in the district with Hepatitis B vaccine
+ $ PctUpToDate     : Percentage of students with completely up-to-date vaccines
+ $ DistrictComplete: Boolean showing whether or not district’s reporting was complete
+ $ PctBeliefExempt : Percentage of all enrolled students with belief exceptions
+ $ PctMedicalExempt: Percentage of all enrolled students with medical exceptions
+ $ PctChildPoverty : Percentage of children in district living below the poverty line
+ $ PctFamilyPoverty: Percentage of families in district living below the poverty line
+ $ PctFreeMeal     : Percentage of students in the district receiving free or reduced cost meals
+ $ Enrolled        : Total number of enrolled students in the district
+ $ TotalSchools    : Total number of different schools in the district
+```
+
+_As might be expected, the data are quite skewed: districts range from 1 to 582 schools enrolling from 10 to more than 50,000 students. Further, while most districts have low rates of missing vaccinations, a handful are quite high. Be sure to note problems the data cause for the analysis and address any problems you can. _
+
+
+```{r}
+load("C:/Users/shaik/Downloads/datasets15.RData")
+```
+
+# Descriptive Reporting
+
+## 1.	_Basic Introductory Paragraph_
+
+_In your own words, write about three sentences of introduction addressing the staff member in the state legislator’s office. Frame the problem/topic that your report addresses._
+
+
+We have two datasets one is time series which shows how the rate of vaccination has been varied over time. We have the data from the year 1980 to 2017.
+What are the challenges faced and how to tackle those uusing statistical analysis.
+
+The another datasets which is districts shows how many children are up_to_date with the vaccinatio and how many are not. 
+The challenge here is why others are not vaccinated (up_to_date), what are the challenges faced by them and what are the possible solutions to it
+## 2.	_Descriptive Overview of U.S. Vaccinations_
+
+_You have U.S. vaccination data going back 38 years, but the staff member is only interested in recent vaccination rates as a basis of comparison with California schools._ 
+
+### a.	_How have U.S. vaccination rates varied over time? _
+  
+Visualizing and undertanding the data
+```{r}
+plot.ts(usVaccines)
+```
+  
+  As per the visualization of the graph the important aspect is to note that all of them had a huge drop in rates in the late 1980's  and only third dose of polio and first dose of measles shows a drop in rate in early 90's else it shows an overall increase in the rates till the year 2000 and then it shows a constant trend with a negligible increase in all of the vaccines except that of Hepatitis B, Hepatitits B shows an increase till 2010 and a boost in rate in at the initial years after 2010
+  
+  
+### b.	_Are there notable trends or cyclical variation in U.S. vaccination rates?_
+
+```{r}
+acf(usVaccines[,"DTP1"])
+acf(usVaccines[,"HepB_BD"])
+acf(usVaccines[,"Pol3"])
+acf(usVaccines[,"Hib3"])
+acf(usVaccines[,"MCV1"])
+```
+
+
+There can be a trend and cyclicality in First dose of Diphtheria/Pertussis/Tetanus vaccine and Hepatitis B, Birth Dose because the interpreting lines are crossing the dotted lines in the graph, However Polio third dose ,Influenza third dose,  Measles first dose (included in MMR does not contain that much of trend and cyclicality because of their frequency 
+
+
+
+```{r}
+library(tseries)
+adf.test(usVaccines[,"DTP1"])
+adf.test(usVaccines[,"HepB_BD"])
+adf.test(usVaccines[,"Pol3"])
+adf.test(usVaccines[,"Hib3"])
+adf.test(usVaccines[,"MCV1"])
+```
+The alternative hypothesis suggests all of the vaccines are stationary over time but the p-value to favour the alternate hypothesis is not significant and hence we cannot go with the test model as we can clearly see the trend and cyclicality with respect to time in the visualizations and it is not stationary at all. all of the m shows cyclicality and trends at some point.
+
+
+
+  
+### c.	_What are the mean U.S. vaccination rates when including only recent years in the calculation of the mean (examine your answers to the previous question to decide what a reasonable recent period is, i.e., a period during which the rates are relatively constant)?_
+
+
+```{r}
+Recent <- window(usVaccines, start = 2016, end = 2017)
+Recent
+
+```
+```{r}
+Vaccine <- data.frame(Recent)
+Vaccine
+```
+
+```{r}
+mean(Vaccine$DTP1)
+mean(Vaccine$HepB_BD)
+mean(Vaccine$Pol3)
+mean(Vaccine$Hib3)
+mean(Vaccine$MCV1)
+```
+
+```{r}
+oldest <- window(usVaccines, start = 1980, end = 1981)
+oldest
+summary(oldest)
+```
+Mean_DTP1    :- 83.50
+Mean_HepB_Bd :- 16
+Mean_Pol3    :- 95.5
+Mean_Hib3    :- 85
+Mean_MCV1    :- 91.50
+
+
+
+In overall analysis and comaring the initial variance and visual representations we cann say that the vaccination had higher and constant rates in the year 2016 and 2017
+
+
+  
+## 3.	_Descriptive Overview of California Vaccinations_
+
+_Your districts dataset contains four variables that capture the individual vaccination rates by district: WithDTP, WithPolio, WithMMR, and WithHepB._
+
+### a.	_What are the mean levels of these variables across districts?_ 
+```{r}
+Districts_whole <- subset(districts,select=c(WithDTP,WithPolio,WithMMR,WithHepB,PctUpToDate,PctBeliefExempt,PctChildPoverty, PctFamilyPoverty,PctFreeMeal,Enrolled,TotalSchools))
+summary(Districts_whole)
+```
+Means are, 
+
+ WithDTP         : 89.85
+ WithPolio       : 90.21
+ WithMMR         : 89.81
+ WithHepB        : 92.23
+ PctUpToDate     : 87.94
+ PctBeliefExempt : 6.206
+ PctChildPoverty : 22.18
+ PctFamilyPoverty: 11.32
+ PctFreeMeal     : 48.42
+ Enrolled        : 616.9
+ TotalSchools    : T7.089
+ 
+  
+### b.	_Among districts, how are the vaccination rates for individual vaccines related? In other words, if there are students with one vaccine, are students likely to have all of the others?_
+
+```{r}
+Districts_New1 <- subset(districts,select=c(WithDTP,WithPolio,WithMMR,WithHepB))
+cor(Districts_New1)
+```
+The rates of Polio and WithDTP are highly correlated
+The rates of MMR, with Polio are highly correlated
+The rates of With MMR, WithHepB are highly correlated 
+
+
+  
+### c.	_How do these Californian vaccination levels compare to U.S. vaccination levels (recent years only)? Note any patterns you notice. _ 
+
+```{r}
+#These are the mean US vaccination rates
+mean(Vaccine$DTP1)
+mean(Vaccine$HepB_BD)
+mean(Vaccine$Pol3)
+mean(Vaccine$Hib3)
+mean(Vaccine$MCV1)
+
+
+
+
+#The below are the California mean vaccination rates
+
+# WithDTP         : 89.85
+ #WithPolio       : 90.21
+ #WithMMR         : 89.81
+ #WithHepB        : 92.23
+```
+
+
+As per the comparision of the means we can say that the DTP vaccine and the MMR vaccine are cheap in California as compared to the Polio and Hepatitis B vaccines
+
+
+
+## 4.	_Conclusion Paragraph for Vaccination Rates_
+
+_Provide one or two sentences of your professional judgment about where California school districts stand with respect to vaccination rates and in the larger context of the U.S._
+As per the comparision of the means we can say that the DTP vaccine and the MMR vaccine are cheap in California as compared to the Polio and Hepatitis B vaccines
+To overcome the challenge
+
+We can notice from the above analysis that there is a variance in the vaccination rates of state and countries. To make it more cost effective the centralized rate or we can say one rate for entire nation is a very good solution as in vaccination the state and central both can contribute the funds making all of the vaccination more ost efective and making it more constant through out the period in future.
+
+
+
+# Inferential Reporting
+
+_For every item below except 7, use PctChildPoverty, PctFamilyPoverty, Enrolled, and TotalSchools as the four predictors. Explore the data and transform variables as necessary to improve prediction and/or interpretability. Be sure to include appropriate diagnostics and modify your analyses as appropriate. _ 
+ 
+## 5.	_Which of the four predictor variables predicts the percentage of all enrolled students with belief exceptions?_
+```{r}
+library(psych)
+library(dlookr)
+library(mice)
+library(tidyverse)
+describe(districts)
+summary(districts)
+diagnose(districts)
+md.pattern(districts, plot=FALSE)
+
+
+districts %>% pivot_longer(cols=-DistrictName, names_to="variable",
+                        values_to="value", values_drop_na = TRUE) %>% 
+ggplot(aes(x=variable, y=value)) + geom_violin() + facet_wrap( ~ variable, scales="free")
+```
+
+In this via violen plot we are looking whether the data is skewed or not. We are using four variables  PctChildPoverty, PctFamilyPoverty, Enrolled, and TotalSchools.We can notice that the distribution of total schools and Enrolled students are highly skewed. To remove the skewness we can either take sqrt function or use log, the reciprocal of the value and so on.  
+
+
+Taking a look at the outliers and and underatanding them while noicing if they are genuine extreme values or an error.
+
+
+```{r}
+library(dlookr)
+diagnose_outlier(districts)
+plot_outlier(districts)
+
+```
+
+
+To improve the skewness using squareroot of the value
+
+```{r}
+districts$sqrt_TotalSchools <- sqrt(districts$TotalSchools)
+districts$sqrt_Enrolled <- sqrt(districts$Enrolled)
+hist(districts$Enrolled)
+hist(districts$sqrt_Enrolled)
+hist(districts$TotalSchools)
+hist(districts$sqrt_TotalSchools)
+```
+
+
+By operating and applying the sqrt we can see a noticable change in the graph but it is not a considerable because the after the operation the resultant shows the skewness as well.. 
+
+Trying the log to remove skewness.
+
+
+```{r}
+districts$log_TotalSchools <- log(districts$TotalSchools)
+districts$log_Enrolled <- log(districts$Enrolled)
+hist(districts$Enrolled)
+hist(districts$log_Enrolled)
+hist(districts$TotalSchools)
+hist(districts$log_TotalSchools)
+```
+In comparing the sqrt and log we can see that the skewness is removed more using log than that of sqrt.
+
+Checking how bad the outlier is by taking into consideration the numeric skewness.
+
+
+
+
+```{r}
+with(districts, apply(cbind(PctChildPoverty, PctFamilyPoverty, Enrolled, TotalSchools), 2, skewness))
+
+
+with(districts, apply(cbind(PctChildPoverty, PctFamilyPoverty, districts$log_Enrolled, districts$log_TotalSchools ), 2, skewness))
+
+```
+
+
+```{r}
+library(visdat)
+vis_miss(districts)
+```
+
+Here Percentage in Medical Exempt shows that there are 34.71 percentage of missing values. For our analysis since aprroximately 35% of the data is missing. I will be excluding th column.
+
+
+```{r}
+Districts <- subset(districts,select=c(PctChildPoverty, PctFamilyPoverty, log_Enrolled,log_TotalSchools, PctBeliefExempt ))
+```
+
+
+
+```{r}
+require(tidyverse)
+Districts %>% pivot_longer(-PctBeliefExempt, names_to="variable", values_to="value", values_drop_na = TRUE) %>% 
+             ggplot(aes(x=value, y=PctBeliefExempt)) + geom_point() + 
+                  geom_smooth(method = "lm") + facet_wrap( ~ variable, scales="free")
+```
+```{r}
+library(psych)
+pairs.panels(Districts)
+```
+
+From the above graphical interpretation and correlation values we can say that the schools and enrolled values are highly correlated.
+
+
+```{r}
+Districts <- subset(districts,select=c(PctChildPoverty, PctFamilyPoverty, log_Enrolled,log_TotalSchools, PctBeliefExempt ))
+
+x <- lm(PctBeliefExempt ~ log_Enrolled + PctChildPoverty + log_TotalSchools + PctFamilyPoverty, data=Districts)
+summary(x)
+
+library(BayesFactor)
+y <- lmBF( PctBeliefExempt ~ log_Enrolled + PctChildPoverty + log_TotalSchools + PctFamilyPoverty, data=Districts, posterior=TRUE, iterations=10000)
+summary(y)
+```
+
+```{r}
+library(BayesFactor)
+z <- lmBF( PctBeliefExempt ~ log_Enrolled + PctChildPoverty + log_TotalSchools + PctFamilyPoverty, data=Districts)
+z
+```
+
+
+
+Interpretation:- 
+
+I performed the linear regression to predict the percentage of the belief exempt from log_enrolled students, log_total schools, percentage of child poverty and percentage of family poverty.
+
+Before performing the regression the violin plot showed the skewness in the variables. Total schools and enrolled where highly skewed which I confirmed using the histogram, outliers diagnosis plot and the numeric representation of the skewness. 
+
+To improve the skewness I used sqrt but it did not affect the variables. The resultant was also skewed. Therefore to deal with the skewness the log function is performed on enrolled and total schools. This helped me improving not only the skewness but also the non-linearity.
+
+
+ A linear regression found strong support for the relationship (F(4, 695)=16.56 , p<0.001, adjusted R2 =   0.08174 ). PctFamilyPoverty and log_Enrolled are statistically significant and the only variable which we can consider because of statistical significance. Rest of the variables are not statistically significant on basis of their p-value and hence we cannot consider them in interpretation of the Belief Exempt
+
+
+A Bayesian regression also found overwhelming evidence in support of a model with percentage of family poverty and log_Enrolled.The sampled coefficients had similar values, a mean of -2.34740  for log_Enrolled with an HDI of   -0.59572 (lower bound) to -1.05459(upper bound),The mean of -0.02553  for log_ Family Poverty with an HDI of  -0.43820 (lower bound) to 2.97586(upper bound).
+
+The bayes factor gives us the odds ratio of 6.118e+09 : 1 which gives us the very strong evidence in the favour of alternative hypothesis that means log_Enrolled and Percentage of family poverty will predict the percentage of belief exemptions in the population data and it is rejecting the intercept only model.
+
+
+## 6.	_Which of the four predictor variables predicts the percentage of all enrolled students with completely up-to-date vaccines?_
+
+
+Taking a proper visualization of the dataset and understanding it.
+
+
+```{r}
+library(psych)
+library(dlookr)
+library(mice)
+library(tidyverse)
+describe(districts)
+summary(districts)
+diagnose(districts)
+md.pattern(districts, plot=FALSE)
+
+
+districts %>% pivot_longer(cols=-DistrictName, names_to="variable",
+                        values_to="value", values_drop_na = TRUE) %>% 
+ggplot(aes(x=variable, y=value)) + geom_violin() + facet_wrap( ~ variable, scales="free")
+```
+
+To improve the skewness using squareroot of the value
+
+
+```{r}
+districts$sqrt_TotalSchools <- sqrt(districts$TotalSchools)
+districts$sqrt_Enrolled <- sqrt(districts$Enrolled)
+hist(districts$Enrolled)
+hist(districts$sqrt_Enrolled)
+hist(districts$TotalSchools)
+hist(districts$sqrt_TotalSchools)
+```
+By operating and applying the sqrt we can see a noticable change in the graph but it is not a considerable because the after the operation the resultant shows the skewness as well.. 
+
+Trying the log to remove skewness.
+
+
+```{r}
+districts$log_TotalSchools <- log(districts$TotalSchools)
+districts$log_Enrolled <- log(districts$Enrolled)
+hist(districts$Enrolled)
+hist(districts$log_Enrolled)
+hist(districts$TotalSchools)
+hist(districts$log_TotalSchools)
+```
+
+
+In comparing the sqrt and log we can see that the skewness is removed more using log than that of sqrt.
+Checking how bad the outlier is by taking into consideration the numeric skewness.
+
+
+```{r}
+library(e1071)
+with(districts, apply(cbind(PctChildPoverty, PctFamilyPoverty, Enrolled, TotalSchools), 2, skewness))
+
+
+with(districts, apply(cbind(PctChildPoverty, PctFamilyPoverty, districts$log_Enrolled, districts$log_TotalSchools ), 2, skewness))
+```
+
+```{r}
+library(visdat)
+vis_miss(districts)
+```
+
+Here Percentage in Medical Exempt shows that there are 34.71 percentage of missing values. For our analysis since aprroximately 35% of the data is missing. I will be excluding th column.
+
+
+
+```{r}
+Districts1 <- subset(districts,select=c(PctChildPoverty, PctFamilyPoverty, log_Enrolled,log_TotalSchools, PctUpToDate ))
+View(Districts1)
+```
+
+```{r}
+require(tidyverse)
+Districts1 %>% pivot_longer(-PctUpToDate, names_to="variable", values_to="value", values_drop_na = TRUE) %>% 
+             ggplot(aes(x=value, y=PctUpToDate)) + geom_point() + 
+                  geom_smooth(method = "lm") + facet_wrap( ~ variable, scales="free")
+```
+
+
+```{r}
+library(psych)
+pairs.panels(Districts1)
+```
+
+From the above graphical interpretation and correlation values we can say that the schools and enrolled values are highly correlated.
+
+
+```{r}
+View(Districts)
+x <- lm(PctUpToDate ~ log_Enrolled + PctChildPoverty + log_TotalSchools + PctFamilyPoverty, data=Districts1)
+summary(x)
+
+library(BayesFactor)
+y <- lmBF( PctUpToDate ~ log_Enrolled + PctChildPoverty + log_TotalSchools + PctFamilyPoverty, data= Districts1, posterior=TRUE, iterations=10000)
+summary(y)
+```
+
+
+```{r}
+library(BayesFactor)
+z <- lmBF( PctUpToDate ~ log_Enrolled + PctChildPoverty + log_TotalSchools + PctFamilyPoverty, data=Districts1)
+summary(z)
+z
+```
+
+
+
+Interpretation:- 
+
+I performed the linear regression to predict the percentage of the up_to_date from total enrolled students, total schools, percentage of child poverty and percentage of family poverty.
+
+Before performing the regression the violin plot showed the skewness in the variables. Total schools and enrolled where highly skewed which I confirmed using the histogram, outliers diagnosis plot and the numeric representation of the skewness. 
+
+To improve the skewness I used sqrt but it did not affect the variables. The resultant was also skewed. Therefore to deal with the skewness the log function is performed on enrolled and total schools. This helped me improving not only the skewness but also the non-linearity.
+
+
+ A linear regression found strong support for the relationship (F(4, 695)=30.51 , p<0.001, adjusted R2 =   0.1445 ).log_Enrolled, log_Total Schools and percentage of family poverty are the only variables which are statistically significant and the only variables which we can consider because of statistical significance. Percentage of the child poverty is not statistically significant on basis of its p-value and hence we cannot consider it for the interpretation of the Percentage of up to date vaccine
+
+A Bayesian regression also found overwhelming evidence in support of a model with log_Enrolled, log_Total Schools and percentage off family poverty. The sampled coefficients had similar values, a mean of 3.68849 for log_Enrolled with an HDI of   2.34731 (lower bound) to  5.0279(upper bound),The mean of -2.38878 for log_ TotalSchools with an HDI of   -4.20420(lower bound) to  0.4185(upper bound), The mean of  0.20346 for percentage of family poverty with an HDI of    -0.00563(lower bound) to  -0.5639(upper bound)
+
+The odds ratio is 1.584279e+20 : 1 which is strongly in the favour of alternate of hypothesis that means the log_Total school, log_Enrolled, and percentage od family poverty will predict the up_to_date vaccine and it rejects the null hypothesis or the intercept only model.
+
+
+## 7.	_Using any set of predictors that you want to use, what’s the best R-squared you can achieve in predicting the percentage of all enrolled students with completely up-to-date vaccines while still having an acceptable regression?_
+
+
+We can use the step-wise regression to see what predictors are giving the best results, another approach is to use the correlation matrix and check which predictors are highly correlated and use one of them. We have to predict the up_to_date vaccines.
+```{r}
+Districts_whole <- subset(districts,select=c(WithDTP,WithPolio,WithMMR,WithHepB,PctUpToDate,PctBeliefExempt,PctChildPoverty, PctFamilyPoverty,PctFreeMeal,Enrolled,TotalSchools))
+cor(Districts_whole)
+View(Districts_whole)
+```
+
+DTP is highly correlated to Polio
+
+Polio is highly correlated to MMR
+
+MMR is highly correlated to PctUp_to_date
+
+Pct uptodate is highly correlated to With Pct_Belief Exempt
+
+PctBelief Exempt is highly correlated with PctFreeMeal 
+
+PctChild Poverty is highly correlated to PctFamilypoverty
+
+Pct Family poverty is highly correlated to pct free meal
+
+Pct free meal is strongly correlated to enrolled students
+
+Enrolled students is highly correlated to Total schools
+
+
+
+```{r}
+library(psych)
+library(dlookr)
+library(mice)
+library(tidyverse)
+
+md.pattern(Districts_whole, plot=FALSE)
+
+
+Districts_whole %>% pivot_longer( cols = -PctUpToDate  , names_to="variable",
+                        values_to="value", values_drop_na = TRUE) %>% 
+ggplot(aes(x=variable, y=PctUpToDate)) + geom_violin() + facet_wrap( ~ variable, scales="free")
+```
+
+
+
+As we can see that all the predictors are skewed but not so highly skewed that we need to improve the skewness of each predictor by using the operations.
+We will perform the analysis on the same predictors as it is.
+
+
+```{r}
+lm.outwhole <- lm(PctUpToDate  ~ WithDTP + WithPolio+ Enrolled + WithMMR + WithHepB + PctBeliefExempt + PctChildPoverty + PctFamilyPoverty + PctFreeMeal + TotalSchools, data = Districts_whole)
+summary(lm.outwhole)
+lm.out <- lm( PctUpToDate  ~ WithDTP + WithMMR + WithHepB +  PctBeliefExempt , data = Districts_whole)
+summary(lm.out)
+lm.out1 <- lm(PctUpToDate ~ WithDTP + WithMMR + WithHepB +  PctBeliefExempt + PctChildPoverty ,  data = Districts_whole)
+summary(lm.out1)
+```
+
+
+We can see that the following predictors are not producing significant results on basis of their p-value and hence we dont need them for our predictions. They are as follows
+
+WithPolio,PctFreeMeals,Enrolled,TotalSchools, PctChildPoverty, PctFamilyPoverty
+
+
+Removing all of this from our model
+
+So our first model generates the adjusted Rsquared of 0.949 with an inclusion of all the predictors some of them are giving the significant .
+
+The second model generates the adjusted Rsquared of 94.49 with all of the significant predictors.
+
+The third model generates the adjusted Rsquared of 0.9452 with all of the significant predictors which is predicting the percentage up_to_date and they are WithDTP, WithMMR, WithHepB, PctBeliefExempt and Pct Child Poverty.
+
+
+
+So on basis of the results we can say that the best predictors which are predicting the Percentage of students with completely up-to-date vaccines are WithDTP, WithMMR, WithHepB, PctBeliefExempt,, PctChildPoverty, with F-statistic of 2412 on 5 and 694 Degrees of Freedom and a significant p-value of 2.2e-16.
+The Adjusted R squared is of 0.9452 i.e the model can predict upto the accuracy of 94.52%
+
+
+
+
+```{r}
+library(BayesFactor)
+lmBF.outwhole <- lmBF(PctUpToDate  ~ WithDTP + WithPolio+ Enrolled + WithMMR + WithHepB + PctBeliefExempt + PctChildPoverty + PctFamilyPoverty + PctFreeMeal + TotalSchools, data = Districts_whole, posterior=TRUE, iterations=10000)
+summary(lmBF.outwhole)
+lmBF.out <- lmBF( PctUpToDate  ~ WithDTP + WithMMR + WithHepB +  PctBeliefExempt , data = Districts_whole, posterior=TRUE, iterations=10000)
+summary(lmBF.out)
+lmBF.out1 <- lmBF(PctUpToDate ~ WithDTP + WithMMR + WithHepB +  PctBeliefExempt + PctChildPoverty ,  data = Districts_whole, posterior=TRUE, iterations=10000)
+summary(lmBF.out1)
+```
+
+```{r}
+library(BayesFactor)
+
+Bayesian_Result1 <- lmBF(PctUpToDate  ~ WithDTP + WithPolio+ Enrolled + WithMMR + WithHepB + PctBeliefExempt + PctChildPoverty + PctFamilyPoverty + PctFreeMeal + TotalSchools, data = Districts_whole)
+Bayesian_Result2 <- lmBF( PctUpToDate  ~ WithDTP + WithMMR + WithHepB +  PctBeliefExempt , data =  Districts_whole ) 
+Bayesian_Result3 <- lmBF(PctUpToDate ~ WithDTP + WithMMR + WithHepB +  PctBeliefExempt + PctChildPoverty ,  data = Districts_whole)
+
+Bayesian_Result1
+Bayesian_Result2
+Bayesian_Result3
+```
+
+#Bayesian Interpretation
+
+
+A Bayesian regression also found overwhelming evidence in support of a model 3 which provides the accuracy upto 94.52 percentage or the adjusted Rsquared is 0.9452 in the linear regression model, Percentage of students with completely up-to-date vaccines, Percentage of students in the district with the MMR vaccine, Percentage of students in the district with Hepatitis B vaccine, Percentage of students in the district with Hepatitis B vaccine, Percentage of all enrolled students with medical exceptions, Percentage of children in district living below the poverty line are the excellent significant predictors. The sampled coefficients had similar values, a mean of  0.37935 for WithDTP with an HDI of   0.283431 (lower bound) to   0.47659(upper bound),The mean of 0.80186  for WithMMR with an HDI of   0.80186(lower bound) to  0.89568(upper bound), The mean of  -0.09436 for WithHepB with an HDI of    -0.151667(lower bound) to  -0.03890(upper bound),  The mean of  0.04754 forpercentage of belief exempt with an HDI of   0.021999(lower bound) to  0.07240(upper bound), The mean of  0.02085 forpercentage of child poverty with an HDI of   0.001827(lower bound) to   0.03901(upper bound)
+
+The odds ratio is 2.587821e+431 ± 0%  which is strongly in the favour of alternate of hypothesis that means Percentage of students in the district with the MMR vaccine, Percentage of students in the district with Hepatitis B vaccine, Percentage of students in the district with Hepatitis B vaccine, Percentage of all enrolled students with medical exceptions, Percentage of children in district living below the poverty line are perfectly predicting the perrcentage of enrolled students with up_to_date vaccine rejecting the null hypothesis or the intercept only model.
+
+
+
+## 8.	_In predicting the percentage of all enrolled students with completely up-to-date vaccines, is there an interaction between PctChildPoverty and Enrolled?_
+
+```{r}
+Interaction_Whole <- subset(districts,select=c(PctUpToDate,PctChildPoverty,Enrolled))
+View(Interaction_Whole)
+```
+
+
+
+```{r}
+library(psych)
+library(dlookr)
+library(mice)
+library(tidyverse)
+
+md.pattern(Interaction_Whole, plot=FALSE)
+
+
+Interaction_Whole %>% pivot_longer( cols = -PctUpToDate  , names_to="variable",
+                        values_to="value", values_drop_na = TRUE) %>% 
+ggplot(aes(x=variable, y=PctUpToDate)) + geom_violin() + facet_wrap( ~ variable, scales="free")
+
+```
+
+
+```{r}
+Centred_PctUpToDate <- scale(Interaction_Whole$PctUpToDate, center=T, scale= F)
+
+Centred_PctChildPoverty <- scale(Interaction_Whole$PctChildPoverty, center=T, scale= F)
+
+Centred_Enrolled <- scale(Interaction_Whole$Enrolled, center=T, scale= F)
+
+```
+
+
+```{r}
+library(psych)
+pairs.panels(Interaction_Whole)
+
+```
+
+```{r}
+library(dlookr)
+outlier(Interaction_Whole)
+```
+
+
+```{r}
+lm.Interaction_Whole <- lm(formula = Centred_PctUpToDate ~ Centred_Enrolled * Centred_PctChildPoverty , data = Interaction_Whole)
+summary(lm.Interaction_Whole)
+```
+
+```{r}
+library(DHARMa)
+Residuals1 <- simulateResiduals(fittedModel = lm.Interaction_Whole, n=250)
+plot(Residuals1)
+testResiduals(Residuals1)
+```
+
+#Conducting Bayesian Analysis
+
+
+```{r}
+library(BayesFactor)
+bayes.out <- lmBF( formula = PctUpToDate ~ Enrolled * PctChildPoverty , data = Interaction_Whole, posterior=TRUE, iterations=10000)
+summary(bayes.out)
+```
+
+```{r}
+library(BayesFactor)
+Bayes.output <- lmBF( formula = PctUpToDate ~ Enrolled * PctChildPoverty , data = Interaction_Whole)
+Bayes.output
+```
+
+#Interpretation :-
+
+The Enrolled students and percentage of child poverty perfectly interacts with each other for prediction of percentage of students with up_to_date vaccine as all of them are statistically significant. The interaction with a p-value less than that of standard alpha value which is 1.34e-05 ** and the Percentage of child poverty with the p-value of 6.03e-07 *** and the percentage of enrolled students with a p-value of5.94e-06 ***. The model give us the F statistics of 19.85 on 3 and 695 degrees of freedom and the Adjusted R squared r the accuracy which we can gate from this model is upto0.07485 and 7.485 respectively. The model favors the alternate hypothesis and rejects the null hypothesis which says its an intercept only model.
+
+
+Bayesian Representation
+
+
+A Bayesian regression also found overwhelming evidence in support of a model which provides the accuracy upto 7.485 percentage or the adjusted Rsquared is 0.07485 in the linear regression modelThe sampled coefficients had similar values, a mean of  0.37935 for WithDTP with an HDI of   0.283431 (lower bound) to   0.47659(upper bound),The mean of 0.80186  for WithMMR with an HDI of   0.80186(lower bound) to  0.89568(upper bound), The mean of  -0.09436 for WithHepB with an HDI of    -0.151667(lower bound) to  -0.03890(upper bound),  The mean of  0.04754 forpercentage of belief exempt with an HDI of   0.021999(lower bound) to  0.07240(upper bound), The mean of  0.02085 forpercentage of child poverty with an HDI of   0.001827(lower bound) to   0.03901(upper bound)
+
+The odds ratio is 1980915230 ±0% which is strongly in the favour of alternate of hypothesis that means The Enrolled students and percentage of child poverty perfectly interacts with each other for prediction of percentage of students with up_to_date vaccine rejecting the null hypothesis or the intercept only model.
+
+The sampled coefficients had similar values, a mean of  0.37935 for WithDTP with an HDI of   0.283431 (lower bound) to   0.47659(upper bound),The mean of  5.894e-03   for Enrolled students with an HDI of    3.332e-03(lower bound) to  8.465e-03(upper bound), The mean of    3.038e-01 for Percentage of child poverty with an HDI of     3.038e-01(lower bound) to  8.465e-03(upper bound),  The mean of  -1.849e-04 for the interaction between the enrolled and the child poverty with an HDI of  -2.676e-04 (lower bound) to  -1.005e-04(upper bound)
+
+
+
+
+
+
+## 9.	_Which, if any, of the four predictor variables predict whether or not a district’s reporting was complete?_
+
+
+```{r}
+Districts_New <- subset(districts,select=c(PctChildPoverty, PctFamilyPoverty, log_Enrolled,log_TotalSchools, DistrictComplete ))
+library(tidyverse)
+Districts_New %>% pivot_longer(cols=-c(DistrictComplete), names_to="variable",
+                        values_to="value", values_drop_na = TRUE) %>% 
+ggplot(aes(x=variable, y=value)) + geom_violin(bw=.5) + facet_wrap( ~ variable, scales="free")
+```
+
+
+On basis of the observation of violin plot we can say that the log_Enrolled and log_TotalSchool's skewness is improved after we performed the log on enrolled and total schools.
+
+```{r}
+summary(Districts_New)
+```
+
+
+```{r}
+cor(Districts_New)
+```
+From the results we can see that the highly correlated data are :-
+
+Percentage of child poverty and percentage of family poverty are strongly correlated
+log_Enrolled is highly correlated to log_TotalSchools
+Percentage of family poverty is correlated to log_enrolled
+
+We are excluding the District Complete because it is not a numerical value.
+
+
+
+
+
+#Running a logistic regression model and understanding the visual representations
+
+
+
+```{r}
+library(performance)
+library(see)
+
+DistrictsNew.glm <- glm(formula = DistrictComplete ~ PctChildPoverty + PctFamilyPoverty + log_Enrolled + log_TotalSchools, family = binomial(link="logit"), data = Districts_New)
+check_model(DistrictsNew.glm)
+summary(DistrictsNew.glm )
+```
+
+
+As per the observation we can see that for homogeneity of variance the reference line is flat and horizontal,
+For influential Observations points are inside the contour lines,
+For normality of rsiduals Dots are falling along the line.
+The only issue is with collinearity it is showing us that multiple variables are collinear and the model needs an improvement in removing the multi-collinearity issue.
+
+
+Now here we can use our results of correlation matrix. We can see that the log_Enrolled and log_TotalSchool, percentage of child poverty and percentage of family poverty were highly correlated so we will consider only on among each of them.
+
+As from summary we can see that the p-value of child poverty is not statistically significant so we can remove that from the model to deal with multi-collinearity issue and along with it we can remove log_totalschools as the standard error of log_totalschools is more of it than that of the log_Enrolled
+
+
+```{r}
+DistrictsNew1.glm <- glm(formula = DistrictComplete ~ PctFamilyPoverty + log_Enrolled , family = binomial(link="logit"), data = Districts_New)
+check_model(DistrictsNew1.glm)
+summary(DistrictsNew1.glm )
+```
+
+We have now cleared the multi-collinearity issue from the model.
+
+To create interpret the residuals and test them Dharma residual diagnostics is the best simulation based approach
+
+```{r}
+library(DHARMa)
+Residuals <- simulateResiduals(fittedModel = DistrictsNew1.glm, n=250)
+plot(Residuals)
+testResiduals(Residuals)
+```
+
+
+Here in a qq plot the expected plots are coinciding with the resultants. 
+The model predictions shows us the residual vs predicted plots the resultants around first and second quantile is good to go but the third quantile is not coinciding
+In the Residuals plot the outliers is around 0 marked in red which is not affecting the model that effectiely.
+
+It looks like a normal distribution
+
+In order to check wether the models are statistically significant or not and further description we will summarised the glm model.
+
+```{r}
+summary(DistrictsNew1.glm)
+```
+
+To obtain the result it performed 6 iterations. 
+The predictors which are percentage of family poverty and percentage of log_enrolled are statistically significant with a p-value less than that of the 0.05.
+
+Here the AIC is 274.25 which is calculating the stress on the model, the lower the aic the better the model is. 
+The Null deviance represents the null hypothesis and residual deviance represents the alternate hypothesis. The residual deviance should be smaller than the null deviance in order to obtain the results in favor of predictors.
+
+The intercept is using one degree of freedom with n = 700 therefore for Null deviance the degrees of freedom is n-1 = 700 - 1 =699 with a null deviance of 289.58
+
+For the Residual deviance the Percentage of family poverty and log_enrolled are using one degree of freedom each and one degree of freedom is used by intercept which makes it 3. Therefore the degrees of freedom is 699 - 2 = 697 for residual deivance of 268.25 
+
+
+we converted the regular odds into log odds for prediction, converting it back into the regular odds using exponential function
+
+
+
+```{r}
+exp(coef(DistrictsNew1.glm)) 
+exp(confint(DistrictsNew1.glm) ) 
+```
+
+```{r}
+probabilities <- predict(DistrictsNew1.glm, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "pos", "neg")
+head(predicted.classes)
+```
+
+```{r}
+library(DHARMa)
+require(dplyr)
+library(tidyverse)
+# Select only numeric predictors
+District_New.n <- Districts_New %>% dplyr::select_if(is.numeric) %>% dplyr::select(-c(PctFamilyPoverty, log_Enrolled))
+predictors <- colnames(District_New.n)
+# Bind the logit and tidying the data for plot
+District_New.n <- District_New.n %>%
+  mutate(logit = log(probabilities/(1-probabilities))) %>%
+  gather(key = "predictors", value = "predictor.value", -logit)
+```
+
+```{r}
+library(ggplot2)
+ggplot(District_New.n, aes(logit, predictor.value))+
+  geom_point(size = 0.5, alpha = 0.5) +
+  geom_jitter(height=.1,width=.1) +
+  geom_smooth(method = "loess") + 
+  theme_bw() + 
+  facet_wrap(~predictors, scales = "free_y")
+```
+
+
+
+library(performance)
+library(caret)
+model_performance(DistrictsNew1.glm)
+g <- Districts_New
+g$DistrictComplete <- as.factor(g$DistrictComplete)
+predictedDistrictNew <-round(predict(DistrictsNew1.glm, type="response"))
+sum(predictedDistrictNew)
+confusion<-table(predictedDistrictNew, ifelse(Districts_New$DistrictComplete == "TRUE",1,0))
+confusion
+addmargins(confusion)
+confusionMatrix(confusion, positive="1")
+
+
+
+A logistic regression was performed on the data with 700 Districts to predict whether the district's reporting was complete or not.
+To predict the reporting we used the Percentage of families in district living below the poverty line, Total number of enrolled students in the district as predictors.
+We can see both of the predictors are statistically significant.
+We can see that the 95% confidence interval for our Percentage of family poverty and log_Enrolled are the variable—representing our District Complete from a low of 0.9137179:1 up to a high of 0.9839753:1 for percentage of family poverty and a low of0.5241409:1 up to a high of 0.8261604:1 for the log_enrolled.
+
+The model showed the performance of with a Tjur's R2 of 3.9% and accuracy of 
+
+
+
+
+
+#Conducting Bayesian Logistic Regression /analysis
+
+
+```{r}
+library(MCMCpack)
+MCMC <- MCMClogit(formula = DistrictComplete ~ PctFamilyPoverty + log_Enrolled, data = Districts_New)
+summary(MCMC)
+```
+
+```{r}
+plot(MCMC)
+```
+
+
+```{r}
+Per.Family <- as.matrix(MCMC[,"PctFamilyPoverty"])
+logEnr <- as.matrix(MCMC[,"log_Enrolled"] )
+Per.Family <- exp(Per.Family) 
+hist(Per.Family, main=NULL) 
+logEnr <- exp(logEnr) 
+hist(logEnr, main=NULL) 
+```
+
+
+```{r}
+hist(Per.Family, main=NULL) 
+abline(v=quantile(Per.Family,c(0.025, 0.5, 0.975)),col="Green") 
+hist(logEnr, main=NULL) 
+abline(v=quantile(logEnr,c(0.025, 0.5, 0.975)),col="Red") 
+
+```
+
+
+Iterpretation
+A logistic regression was performed on the data with 700 Districts to predict whether the district's reporting was complete or not.
+To predict the reporting we used the Percentage of families in district living below the poverty line, Total number of enrolled students in the district as predictors.
+We can see both of the predictors are statistically significant.
+We can see that the 95% confidence interval for our Percentage of family poverty and log_Enrolled are the variable—representing our District Complete from a low of 0.9137179:1 up to a high of 0.9839753:1 for percentage of family poverty and a low of0.5241409:1 up to a high of 0.8261604:1 for the log_enrolled.
+# The result may vary because of Bayesian analysis as there are 10000 iterations and I didn't set seed.
+
+
+
+## 10.	_Concluding Paragraph_
+
+_Describe your conclusions, based on all of the foregoing analyses. As well, the staff member in the state legislator’s office is interested to know how to allocate financial assistance to school districts to improve both their vaccination rates and their reporting compliance. Make sure you have at least one sentence that makes a recommendation about improving vaccination rates. Make sure you have at least one sentence that makes a recommendation about improving reporting rates. Finally, say what further analyses might be helpful to answer these questions and any additional data you would like to have. _
+
+
+
+Conclusion 1:-
+
+
+While performing the time series analysis we noticed there is a cyclicity and the trends in rates of the vaccine.  To improve the vaccination rate there should be one rate through out the countries and state and a constant rate which we can achieve by allocating the funds with a joint venture of central state legislators.
+
+
+
+
+
+
+
+Relation :-
+
+The analysis shows a deep relation in enrolled students and the total no. of schools. This shows the more no. of schools in a district the more no. ppf students in the school
+
+The other high relation is between the child poverty and family poverty. The analysis suggests that when the child in a district is below poverty line there is a lot of possibility that it is from a family in the district which is below poverty line as well.
+
+
+With the help pf other analysis we found a strong relation between The no. of children in district living below the poverty line and family who's living in the district below poverty line and the Percentage of students in the district receiving free or reduced cost meals
+
+The more no. of children who are below poverty line are more likely to belong to the families in the district from below poverty line which are from the percentage of ste=udents in a district who recieves ffree or cost_reducin meals
+
+
+Conclusion2:-
+
+We can conclude that the more no. of schools attracts more no. of students. More no. of student includes all of the students from below poverty line and others.
+
+The people who cannot afford even a meal cannot afford a vaccine.
+
+Building more schools reducing the rate of vaccine and providing free meals and subssidy to families below poverty line will help in improving the overall scenarios.
+
+
+
+
+
+
+
+
+
+
+
+
+
